@@ -1,0 +1,18 @@
+syntax = "proto3";
+package rust_p2p_msg;
+
+service Client {
+    rpc Recieve (Message) returns (Acknowledge);
+}
+
+message Message {
+   string name = 1;
+}
+
+enum Ack {
+  SUCCESS = 0;
+}
+
+message Acknowledge {
+    ack Ack = SUCCESS;
+}

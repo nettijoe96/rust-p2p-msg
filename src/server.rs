@@ -4,13 +4,26 @@ use tonic::{transport::Server, Request, Response, Status};
 
 use p2p_msg::node_server::{Node, NodeServer};
 use p2p_msg::{P2pReply, P2pMsg, Ack};
+use serde::{Deserialize};
+use std::fs;
+use std::env;
 
 pub mod p2p_msg {
     tonic::include_proto!("p2pmsg");
 }
 
-#[derive(Debug, Default)]
-pub struct MyNode {}
+#[derive(Deserialize, Debug, Default)]
+pub struct IP {
+    addr: String,
+    port: i32,
+}
+
+#[derive(Deserialize, Debug, Default)]
+pub struct MyNode {
+    id: i32,
+    ip: IP,
+    peers: Vec<IP>
+}
 
 #[tonic::async_trait]
 impl Node for MyNode {
@@ -30,12 +43,27 @@ impl Node for MyNode {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "[::1]:50051".parse()?;
+    let args: Vec<String> = env::args().collect();
+    if args.len() == 1 {
+        panic!("must provide filename as first command line arg. File must be in directory 'nodes'");
+    }
+
+    println!("{:?}", args);
+
+    let filename = &args[1];
+
+    let path = format!("nodes/{filename}");
+    let contents = fs::read_to_string(path).expect("Couldn't find or load that file.");
+    let n: MyNode = serde_json::from_str(&contents)?;
+
+    let addr = n.ip.addr;
+    let port = n.ip.port;
+    let ip_str = format!("[{addr}]:{port}").parse()?;
     let node = MyNode::default();
 
     Server::builder()
         .add_service(NodeServer::new(node))
-        .serve(addr)
+        .serve(ip_str)
         .await?;
 
     Ok(())

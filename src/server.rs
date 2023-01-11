@@ -2,26 +2,26 @@
 
 use tonic::{transport::Server, Request, Response, Status};
 
-use hello_world::greeter_server::{Greeter, GreeterServer};
-use hello_world::{HelloReply, HelloRequest};
+use p2p_msg::node_server::{Node, NodeServer};
+use p2p_msg::{P2pReply, P2pMsg, Ack};
 
-pub mod hello_world {
-    tonic::include_proto!("helloworld");
+pub mod p2p_msg {
+    tonic::include_proto!("p2pmsg");
 }
 
 #[derive(Debug, Default)]
-pub struct MyGreeter {}
+pub struct MyNode {}
 
 #[tonic::async_trait]
-impl Greeter for MyGreeter {
-    async fn say_hello(
+impl Node for MyNode {
+    async fn recieve_msg(
         &self,
-        request: Request<HelloRequest>,
-    ) -> Result<Response<HelloReply>, Status> {
+        request: Request<P2pMsg>,
+    ) -> Result<Response<P2pReply>, Status> {
         println!("Got a request: {:?}", request);
 
-        let reply = hello_world::HelloReply {
-            message: format!("Hello {}!", request.into_inner().name).into(),
+        let reply = p2p_msg::P2pReply {
+            ack: Ack::Success.into(),
         };
 
         Ok(Response::new(reply))
@@ -31,10 +31,10 @@ impl Greeter for MyGreeter {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = "[::1]:50051".parse()?;
-    let greeter = MyGreeter::default();
+    let node = MyNode::default();
 
     Server::builder()
-        .add_service(GreeterServer::new(greeter))
+        .add_service(NodeServer::new(node))
         .serve(addr)
         .await?;
 

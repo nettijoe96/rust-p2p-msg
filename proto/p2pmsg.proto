@@ -1,0 +1,18 @@
+syntax = "proto3";
+package p2pmsg;
+
+service Node {
+    rpc RecieveMsg (P2pMsg) returns (P2pReply);
+}
+
+message P2pMsg {
+   string msg = 1;
+}
+
+enum Ack {
+    SUCCESS = 0;
+}
+
+message P2pReply {
+    Ack ack = 1;
+}

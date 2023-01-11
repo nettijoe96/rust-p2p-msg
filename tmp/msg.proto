@@ -6,13 +6,13 @@ service Client {
 }
 
 message Message {
-   string name = 1;
+    string name = 1;
 }
 
 enum Ack {
-  SUCCESS = 0;
+    SUCCESS = 0;
 }
 
 message Acknowledge {
-    ack Ack = SUCCESS;
+    Ack ack = 1;
 }

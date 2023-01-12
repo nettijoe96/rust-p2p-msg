@@ -1,23 +1,16 @@
 // from https://github.com/hyperium/tonic/blob/master/examples/helloworld-tutorial.md
 
-use p2p_msg::node_client::NodeClient;
-use p2p_msg::P2pMsg;
-
-pub mod p2p_msg {
-    tonic::include_proto!("p2pmsg");
-}
+use std::env;
+mod forward;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = NodeClient::connect("http://[::1]:50051").await?;
+    let args: Vec<String> = env::args().collect();
+    if args.len() == 1 {
+        panic!("must provide filename as first command line arg. File must be in directory 'nodes'");
+    }
+    let msg = &args[1];
 
-    let request = tonic::Request::new(P2pMsg {
-        msg: "Tonic".into(),
-    });
-
-    let response = client.recieve_msg(request).await?;
-
-    println!("RESPONSE={:?}", response);
-
-    Ok(())
+    let r: () = forward::forward(&"::1".to_string(), 50051, msg.to_string()).await?;
+    Ok(r)
 }

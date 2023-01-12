@@ -7,6 +7,7 @@ use p2p_msg::{P2pReply, P2pMsg, Ack};
 use serde::{Deserialize};
 use std::fs;
 use std::env;
+mod forward;
 
 pub mod p2p_msg {
     tonic::include_proto!("p2pmsg");
@@ -37,6 +38,13 @@ impl Node for MyNode {
             ack: Ack::Success.into(),
         };
 
+        let msg = &request.into_inner().msg;
+        for peer in &self.peers {
+            let addr = &peer.addr;
+            let port = peer.port;
+            let r = forward::forward(addr, port, msg.to_string()).await;
+        }
+
         Ok(Response::new(reply))
     }
 }
@@ -48,21 +56,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         panic!("must provide filename as first command line arg. File must be in directory 'nodes'");
     }
 
-    println!("{:?}", args);
-
     let filename = &args[1];
-
     let path = format!("nodes/{filename}");
     let contents = fs::read_to_string(path).expect("Couldn't find or load that file.");
     let n: MyNode = serde_json::from_str(&contents)?;
 
-    let addr = n.ip.addr;
+    let addr = &n.ip.addr;
     let port = n.ip.port;
     let ip_str = format!("[{addr}]:{port}").parse()?;
-    let node = MyNode::default();
 
     Server::builder()
-        .add_service(NodeServer::new(node))
+        .add_service(NodeServer::new(n))
         .serve(ip_str)
         .await?;
 

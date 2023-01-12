@@ -43,6 +43,10 @@ impl Node for MyNode {
             let addr = &peer.addr;
             let port = peer.port;
             let r = forward::forward(addr, port, msg.to_string()).await;
+            if r.is_err() {
+                // do not crash if node can't be reached
+                println!("peer [{addr}]:{port} cannot be reached");
+            }
         }
 
         Ok(Response::new(reply))

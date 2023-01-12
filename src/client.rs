@@ -6,11 +6,13 @@ mod forward;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
-    if args.len() == 1 {
+    if args.len() < 4 {
         panic!("must provide filename as first command line arg. File must be in directory 'nodes'");
     }
-    let msg = &args[1];
+    let addr = &args[1];
+    let port = args[2].parse::<i32>()?;
+    let msg = &args[3];
 
-    let r: () = forward::forward(&"::1".to_string(), 50051, msg.to_string()).await?;
+    let r: () = forward::forward(&addr.to_string(), port, msg.to_string()).await?;
     Ok(r)
 }

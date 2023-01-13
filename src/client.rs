@@ -1,18 +1,42 @@
 // from https://github.com/hyperium/tonic/blob/master/examples/helloworld-tutorial.md
 
-use std::env;
-mod forward;
+pub mod peer;
+use std::fmt::Debug;
 
+use clap::Parser;
+pub mod models;
+pub mod crypto;
+use serde::{Serialize, Deserialize};
+use k256::ecdsa::recoverable::Signature;
+use models::models::p2p_msg::{P2pMsg};
+use crypto::sig;
+use bincode;
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    #[arg(short, long)]
+    addr: String,
+    #[arg(short, long)]
+    port: i32,
+    #[arg(short, long)]
+    msg: String,
+    #[arg(short, long)]
+    keyfile: String,
+}
+
+// calls recieve_msg gRPC function on some server running on ip:port
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 4 {
-        panic!("must provide filename as first command line arg. File must be in directory 'nodes'");
-    }
-    let addr = &args[1];
-    let port = args[2].parse::<i32>()?;
-    let msg = &args[3];
+    let args = Args::parse();
+    println!("{:?}", args);
 
-    let r: () = forward::forward(&addr.to_string(), port, msg.to_string()).await?;
+    let p2pmsg = P2pMsg {
+        msg: args.msg.to_string(),
+        sig: vec![],
+        pubkey: vec![]
+    };
+
+    let r: () = peer::forward::forward(&args.addr, args.port, p2pmsg).await?;
     Ok(r)
 }

@@ -7,6 +7,8 @@ service Node {
 
 message P2pMsg {
    string msg = 1;
+   bytes pubkey = 2;
+   bytes sig = 3;
 }
 
 enum Ack {

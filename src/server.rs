@@ -2,16 +2,14 @@
 
 use tonic::{transport::Server, Request, Response, Status};
 
-use p2p_msg::node_server::{Node, NodeServer};
-use p2p_msg::{P2pReply, P2pMsg, Ack};
+pub mod models;
+use models::models::p2p_msg::node_server::{Node, NodeServer};
+use models::models::p2p_msg::{P2pReply, P2pMsg, Ack};
 use serde::{Deserialize};
 use std::fs;
 use std::env;
-mod forward;
+pub mod peer;
 
-pub mod p2p_msg {
-    tonic::include_proto!("p2pmsg");
-}
 
 #[derive(Deserialize, Debug, Default)]
 pub struct IP {
@@ -32,17 +30,19 @@ impl Node for MyNode {
         &self,
         request: Request<P2pMsg>,
     ) -> Result<Response<P2pReply>, Status> {
-        println!("Got a request: {:?}", request);
+        let p2pmsg: P2pMsg = request.into_inner();
+        println!("Got a request: {:?}", p2pmsg);
 
-        let reply = p2p_msg::P2pReply {
+        let reply = P2pReply {
             ack: Ack::Success.into(),
         };
 
-        let msg = &request.into_inner().msg;
         for peer in &self.peers {
+            let c = p2pmsg.clone();
             let addr = &peer.addr;
             let port = peer.port;
-            let r = forward::forward(addr, port, msg.to_string()).await;
+            //
+            let r = peer::forward::forward(addr, port, c).await;
             if r.is_err() {
                 // do not crash if node can't be reached
                 println!("peer [{addr}]:{port} cannot be reached");
